@@ -26,11 +26,13 @@ def seed_if_empty(db: Session) -> None:
     ]
     db.add_all(orders)
     db.flush()
+    # HR-2001 已由 A 杆移至 B 杆：A 杆 [0,45] 为失效历史占位，B 杆 [40,85] 为现占位（First-Fit 空位）
     db.add_all(
         [
-            RailPlacement(rail_id=r1.id, order_id=orders[0].id, start_cm=0, end_cm=45),
+            RailPlacement(rail_id=r1.id, order_id=orders[0].id, start_cm=0, end_cm=45, active=0),
             RailPlacement(rail_id=r1.id, order_id=orders[1].id, start_cm=45, end_cm=80),
             RailPlacement(rail_id=r2.id, order_id=orders[4].id, start_cm=0, end_cm=40),
+            RailPlacement(rail_id=r2.id, order_id=orders[0].id, start_cm=40, end_cm=85),
         ]
     )
     db.commit()

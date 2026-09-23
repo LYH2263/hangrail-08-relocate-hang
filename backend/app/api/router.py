@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.models import HangRail, RailPlacement, Store, WorkOrder
 from app.schemas.schemas import (
     HangRequest,
+    MoveRequest,
     OccupancyOut,
     OccupancySeg,
     OrderOut,
@@ -103,6 +104,52 @@ def hang(body: HangRequest, db: Session = Depends(get_db)):
         return order
 
     raise HTTPException(409, "挂杆空间不足")
+
+
+@api_router.post("/move", response_model=OrderOut)
+def move(body: MoveRequest, db: Session = Depends(get_db)):
+    order = db.get(WorkOrder, body.order_id)
+    if not order:
+        raise HTTPException(404, "工单不存在")
+    if order.status != "hung":
+        raise HTTPException(400, "工单未上杆，无法移杆")
+    target = db.get(HangRail, body.target_rail_id)
+    if not target:
+        raise HTTPException(404, "目标挂杆不存在")
+    if target.store_id != order.store_id:
+        raise HTTPException(400, "不可跨店移杆")
+
+    current = db.scalars(
+        select(RailPlacement).where(RailPlacement.order_id == order.id, RailPlacement.active == 1)
+    ).all()
+    if not current:
+        raise HTTPException(409, "工单无有效占位")
+    if any(p.rail_id == target.id for p in current):
+        raise HTTPException(400, "工单已在目标挂杆上")
+
+    # 先在目标杆按现网 First-Fit 试算；放得下才在单事务内释放原占位并写入新占位，
+    # 放不下则直接失败，原 active 占位保持不变。提交前不产生任何中间状态。
+    target_active = db.scalars(
+        select(RailPlacement).where(RailPlacement.rail_id == target.id, RailPlacement.active == 1)
+    ).all()
+    occupied = [Segment(p.start_cm, p.end_cm) for p in target_active]
+    place = first_fit(target.length_cm, occupied, order.length_cm)
+    if place is None:
+        raise HTTPException(409, "目标挂杆空间不足")
+
+    for p in current:
+        p.active = 0
+    db.add(
+        RailPlacement(
+            rail_id=target.id,
+            order_id=order.id,
+            start_cm=place.start_cm,
+            end_cm=place.end_cm,
+        )
+    )
+    db.commit()
+    db.refresh(order)
+    return order
 
 
 @api_router.post("/pickup", response_model=OrderOut)

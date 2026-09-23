@@ -29,8 +29,10 @@ def seed_if_empty(db: Session) -> None:
     db.add_all(
         [
             RailPlacement(rail_id=r1.id, order_id=orders[0].id, start_cm=0, end_cm=45),
-            RailPlacement(rail_id=r1.id, order_id=orders[1].id, start_cm=45, end_cm=80),
+            # HR-2002 已从 A 杆移到 B 杆空位：原 A 杆占位释放为历史行，新占位落在 B 杆 40-75
+            RailPlacement(rail_id=r1.id, order_id=orders[1].id, start_cm=45, end_cm=80, active=0),
             RailPlacement(rail_id=r2.id, order_id=orders[4].id, start_cm=0, end_cm=40),
+            RailPlacement(rail_id=r2.id, order_id=orders[1].id, start_cm=40, end_cm=75),
         ]
     )
     db.commit()

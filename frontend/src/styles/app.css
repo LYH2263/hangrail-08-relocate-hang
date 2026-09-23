@@ -278,3 +278,14 @@ button {
   display: flex; align-items: center; justify-content: center;
   padding: 0 4px; overflow: hidden; white-space: nowrap;
 }
+
+.move-row { display: flex; flex-wrap: wrap; gap: .5rem .75rem; margin-top: .5rem; }
+.move-item {
+  display: flex; align-items: center; gap: .45rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  padding: .3rem .5rem; font-size: .78rem; color: var(--hang-tag);
+}
+.move-item .mono { font-size: .74rem; color: var(--hang-copper); }
+.move-item select, .move-item button { padding: .25rem .5rem; font-size: .76rem; border-radius: 4px; }
+.move-item button:disabled { opacity: .55; cursor: default; }
+.move-na { color: var(--hang-muted); font-size: .74rem; }

@@ -33,6 +33,11 @@ class HangRequest(BaseModel):
     rail_id: int | None = None
 
 
+class MoveRequest(BaseModel):
+    order_id: int
+    target_rail_id: int
+
+
 class PickupRequest(BaseModel):
     ticket_code: str
 
